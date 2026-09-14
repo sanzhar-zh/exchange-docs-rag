@@ -1,0 +1,13 @@
+langchain
+langchain-core
+langchain-text-splitters
+langchain-chroma
+langchain-huggingface
+langchain-anthropic
+langchain-google-genai
+chromadb
+sentence-transformers
+rank-bm25
+fastapi
+uvicorn[standard]
+python-dotenv

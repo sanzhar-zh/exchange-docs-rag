@@ -1,0 +1,470 @@
+/* Palette carried over from the trading platform this project grew out of:
+   near-black, monochrome, white accent. Colour is reserved for meaning - the two
+   exchanges and error states - so nothing else competes for attention. */
+:root {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-card: #161616;
+  --border-color: rgba(255, 255, 255, 0.09);
+  --border-hover: rgba(255, 255, 255, 0.18);
+  --text-primary: #f2f2f2;
+  --text-secondary: #8f8f8f;
+  --text-muted: #5c5c5c;
+  --accent: #ffffff;
+  --accent-hover: #e6e6e6;
+  --accent-muted: rgba(255, 255, 255, 0.14);
+  --accent-contrast: #0f0f0f;
+  --hover-overlay: rgba(255, 255, 255, 0.06);
+  --error: #f85149;
+  --binance: #d29922;
+  --bybit: #58a6ff;
+  --radius: 10px;
+  --anim-duration: 0.16s;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-muted) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--accent-muted);
+  border-radius: 3px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 72px 24px 96px;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+header {
+  margin-bottom: 36px;
+}
+
+.title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.byline {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--anim-duration) ease,
+    border-color var(--anim-duration) ease;
+}
+
+.byline:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-hover);
+}
+
+header p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Search ------------------------------------------------------------------ */
+
+form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+  transition: border-color var(--anim-duration) ease;
+}
+
+input[type="text"]:hover {
+  border-color: var(--border-hover);
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent-muted);
+}
+
+input[type="text"]::placeholder {
+  color: var(--text-muted);
+}
+
+button.primary {
+  padding: 12px 22px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-contrast);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--anim-duration) ease,
+    border-color var(--anim-duration) ease;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button.primary:disabled {
+  background: transparent;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 40px;
+}
+
+button.chip {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color var(--anim-duration) ease,
+    color var(--anim-duration) ease;
+}
+
+button.chip:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+button.chip:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* Panels ------------------------------------------------------------------ */
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 14px;
+}
+
+.panel h2 {
+  margin: 0 0 16px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The model answers in markdown, so the panel styles its output rather than
+   printing it verbatim. Headings are levelled to h3 in the component; here they
+   are given the weight of a label, not of a second title. */
+
+.answer > :first-child {
+  margin-top: 0;
+}
+
+.answer > :last-child {
+  margin-bottom: 0;
+}
+
+.answer p {
+  margin: 0 0 12px;
+}
+
+.answer h3 {
+  margin: 22px 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.answer ul,
+.answer ol {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.answer li {
+  margin-bottom: 5px;
+}
+
+.answer li::marker {
+  color: var(--text-muted);
+}
+
+.answer strong {
+  font-weight: 600;
+}
+
+.answer a {
+  color: var(--text-primary);
+}
+
+.answer code {
+  padding: 1px 5px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.answer pre {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.answer pre code {
+  padding: 0;
+  background: none;
+}
+
+/* Tables can be wider than the panel; only the table scrolls, never the page. */
+.answer table {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.answer th,
+.answer td {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.answer th {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.answer .cite {
+  display: inline-block;
+  min-width: 17px;
+  padding: 0 5px;
+  margin: 0 1px;
+  background: var(--accent-muted);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 17px;
+  text-align: center;
+  vertical-align: 1px;
+}
+
+.provider {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Sources ----------------------------------------------------------------- */
+
+.source {
+  padding: 16px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.source:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.source-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  background: var(--accent-muted);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.badge {
+  flex: none;
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.badge.binance {
+  color: var(--binance);
+}
+
+.badge.bybit {
+  color: var(--bybit);
+}
+
+.section {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.path {
+  margin: 6px 0 0 30px;
+  color: var(--text-muted);
+}
+
+.excerpt {
+  margin: 10px 0 0 30px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.7;
+  max-height: 92px;
+  overflow: hidden;
+}
+
+.excerpt.open {
+  max-height: none;
+}
+
+button.link {
+  margin: 8px 0 0 30px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: color var(--anim-duration) ease,
+    border-color var(--anim-duration) ease;
+}
+
+button.link:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+/* States ------------------------------------------------------------------ */
+
+.note {
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.note.error {
+  border-color: rgba(248, 81, 73, 0.35);
+  color: var(--error);
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 9px;
+  border: 1.5px solid var(--accent-muted);
+  border-top-color: var(--text-secondary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -1px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 560px) {
+  .shell {
+    padding: 40px 16px 64px;
+  }
+  form {
+    flex-direction: column;
+  }
+  .path,
+  .excerpt,
+  button.link {
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,12 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Third-party documentation, fetched by scripts/fetch_docs.py.
+# Not redistributed here: it belongs to the exchanges.
+data/raw/
+
+# Generated index. Rebuilt from data/raw by ingest.py.
+data/chroma/
