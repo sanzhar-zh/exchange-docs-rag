@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+# The modules sit at the repository root rather than in a package, so the root
+# has to be importable from tests/.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 90
+target-version = "py311"
+extend-exclude = ["data", "web"]
+
+[tool.ruff.lint]
+# E/F are the defaults; I keeps imports ordered, UP keeps the syntax current for
+# the target version, B catches the mutable-default and loop-variable-capture
+# class of mistake.
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests reach into module internals deliberately: the BM25 index cache and the
+# index class itself are what several cases are about.
+"tests/*" = ["SLF001"]

@@ -7,9 +7,8 @@ the process lifetime, so the first request after start is slow and the rest are
 not. Warming them at startup moves that cost off the first user.
 """
 
-from contextlib import asynccontextmanager
-
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +16,6 @@ from pydantic import BaseModel, Field
 
 from rag import answer
 from search import retrieve
-
 
 log = logging.getLogger("uvicorn.error")
 

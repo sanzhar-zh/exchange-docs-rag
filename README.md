@@ -1,5 +1,8 @@
 # Exchange Docs RAG
 
+[![checks](https://github.com/sanzhar-zh/exchange-docs-rag/actions/workflows/checks.yml/badge.svg)](https://github.com/sanzhar-zh/exchange-docs-rag/actions/workflows/checks.yml)
+[![retrieval quality](https://github.com/sanzhar-zh/exchange-docs-rag/actions/workflows/retrieval-quality.yml/badge.svg)](https://github.com/sanzhar-zh/exchange-docs-rag/actions/workflows/retrieval-quality.yml)
+
 A question-answering assistant over the public API documentation of two crypto
 exchanges, Binance Spot and Bybit. Ask in your own words, get an answer grounded
 in the documentation with a citation for every claim.
@@ -110,7 +113,11 @@ hybrid rrf_k=10        0.71   0.540      26   <- shipped
 hybrid rrf_k=60        0.69   0.512      28
 ```
 
-Reproduce with `python eval/run_eval.py --sweep`.
+Reproduce with `python eval/run_eval.py --sweep`. The numbers above were measured
+against `binance-spot` at `b8a0f61` and `bybit` at `53ea8fb`; the corpus is cloned
+rather than vendored, so `scripts/fetch_docs.py` records what it fetched in
+`data/raw/CORPUS.txt`. A page renamed upstream shows up as a permanent miss, which
+is worth being able to tell apart from a change here making retrieval worse.
 
 Three changes, each measured on its own, account for the distance from the first
 honest baseline. None of them touched the model or the embeddings; all three are
@@ -177,6 +184,55 @@ sorts before `web-socket-api.md`, so the sandbox documentation was indexed and t
 production documentation dropped. Answers about rate limits cited the testnet page,
 which is correct-looking and wrong. Both mirrors are now excluded at ingestion.
 
+## Tests and continuous integration
+
+Two workflows, because this project can break in two unrelated ways.
+
+**`checks.yml` runs on every push**: `ruff`, 80 tests, and a type check and build
+of the web app. The Python job finishes in about a second, because the tests never
+load the index, the embedding model or a provider, and the job installs
+`requirements-dev.txt` rather than `requirements.txt` - no torch, 150 MB instead of
+a gigabyte.
+
+Almost every test encodes something that actually went wrong here, which is also
+why they are worth keeping:
+
+- `.mdx` files are collected, not only `.md`. Matching one suffix indexed 3% of the
+  Bybit corpus and reported nothing.
+- The production page survives the `testnet/` mirror. Deduplication alone kept
+  whichever path sorted first, so the sandbox rate limits were indexed and the
+  production ones dropped.
+- The preposition leaves with the exchange name. Deleting the name alone left
+  "how do I change leverage on", and the correct page fell from rank 1 to rank 9.
+- A provider failure is answered with a status code, not an unhandled exception.
+  Starlette's 500 handler sits outside the CORS middleware, so the browser
+  discarded the response and the page blamed the network for an exhausted quota.
+
+**`retrieval-quality.yml` runs on pull requests that touch retrieval, and weekly.**
+It clones the documentation, rebuilds the index and fails the build if hit@5 or MRR
+falls below a floor:
+
+```
+python eval/run_eval.py --min-hit 0.68 --min-mrr 0.50
+```
+
+This is the part the unit tests cannot do. A change to chunking, to the exclusion
+rules or to fusion leaves every test passing and can still cost several points of
+recall - the code does what it says, and the answers get worse. The floors sit just
+below the shipped numbers, so the gate answers whether a change made retrieval
+worse rather than whether it moved at all. The weekly run exists because the corpus
+is not vendored: the exchanges rewrite their own documentation, and that should be
+learned from a scheduled run rather than from a number that has been quietly wrong
+for a month.
+
+Locally:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+ruff check .
+```
+
 ## Known limitations
 
 - **Better than one question in four still misses, and hit@5 of 0.71 is not good.** The
@@ -200,6 +256,11 @@ which is correct-looking and wrong. Both mirrors are now excluded at ingestion.
   be answered from five passages.
 - **The index is rebuilt from scratch on every ingest.** Incremental updates are not
   worth the bookkeeping at this size.
+- **Nothing tests the answer, only the retrieval behind it.** Whether the model
+  grounds its answer in the passages and cites them correctly is asserted by
+  reading the output, not by a grader. Scoring generation needs either a second
+  model as judge or hand-written expected answers, and both cost money per run,
+  which is why the gate that runs in CI measures retrieval alone.
 - **HTML stripping is regex-based.** It suits this corpus, where code samples are
   JSON and Python. It would damage a corpus containing markup inside code blocks.
 
@@ -251,6 +312,8 @@ python eval/run_eval.py --sweep
 | `api.py` | FastAPI service behind the web interface |
 | `web/` | Next.js frontend: answer, citations, retrieved passages |
 | `eval/` | question set and the measurement harness |
+| `tests/` | unit tests: parsing, tokenisation, fusion, the HTTP layer |
+| `.github/workflows/` | tests and lint on every push; the retrieval gate on retrieval changes |
 
 The documentation itself is not vendored: `scripts/fetch_docs.py` fetches it, and
 `data/` is ignored.

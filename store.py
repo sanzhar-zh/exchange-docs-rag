@@ -5,22 +5,34 @@ keyword side needs every chunk in memory to build its own index. Keeping the
 loader in one place means the two can never drift onto different corpora.
 """
 
-from langchain_chroma import Chroma
+from typing import TYPE_CHECKING
+
 from langchain_core.documents import Document
-from langchain_huggingface import HuggingFaceEmbeddings
 
 from config import CHROMA_DIR, COLLECTION, EMBEDDING_MODEL
 
-_store: Chroma | None = None
+if TYPE_CHECKING:
+    from langchain_chroma import Chroma
+
+_store: "Chroma | None" = None
 _documents: list[Document] | None = None
 
 
-def get_store() -> Chroma:
-    """Loading the embedding model takes a few seconds, so keep one instance."""
+def get_store() -> "Chroma":
+    """Loading the embedding model takes a few seconds, so keep one instance.
+
+    Chroma and the embedding backend are imported here rather than at module
+    level because importing them pulls in torch, which costs seconds and several
+    hundred megabytes. Nothing that only inspects retrieval logic should pay for
+    that, and the import happens once on the first call either way.
+    """
     global _store
     if _store is None:
         if not CHROMA_DIR.exists():
             raise SystemExit("no index - run ingest.py first")
+
+        from langchain_chroma import Chroma
+        from langchain_huggingface import HuggingFaceEmbeddings
 
         embeddings = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
@@ -49,6 +61,8 @@ def all_documents() -> list[Document]:
         raw = get_store().get(include=["documents", "metadatas"])
         _documents = [
             Document(page_content=text, metadata=meta)
-            for text, meta in zip(raw["documents"], raw["metadatas"])
+            for text, meta in zip(
+                raw["documents"], raw["metadatas"], strict=True
+            )
         ]
     return _documents

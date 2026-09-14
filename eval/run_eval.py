@@ -6,6 +6,13 @@ it usable as a sweep - every configuration can be tried, not argued about.
 
     python eval/run_eval.py              current settings, per-question detail
     python eval/run_eval.py --sweep      compare search modes and MMR lambda
+    python eval/run_eval.py --min-hit 0.68 --min-mrr 0.50    exit non-zero if worse
+
+The last form is what continuous integration runs. A change to chunking, to the
+exclusion rules or to fusion cannot break a test - the code still works - but it
+can quietly cost several points of recall, and this is the only thing that would
+notice. The floors are set below the measured numbers rather than at them: the
+question is whether a change made retrieval worse, not whether it moved.
 
 Two numbers, because they answer different questions:
 
@@ -18,6 +25,7 @@ Two numbers, because they answer different questions:
          still costs quality: lower-ranked context competes with four other chunks.
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -92,18 +100,45 @@ def score(
 
 
 def report_detail(questions: list[dict], result: dict) -> None:
-    for item, rank in zip(questions, result["ranks"]):
+    for item, rank in zip(questions, result["ranks"], strict=True):
         mark = f"#{rank}" if rank else "MISS"
         print(f"  {mark:>5}  {item['q']}")
         if rank is None:
             print(f"         expected: {', '.join(item['expect'])}")
 
 
-def main() -> None:
-    questions = load_questions()
-    sweep = "--sweep" in sys.argv
+def below_floor(
+    result: dict, min_hit: float | None, min_mrr: float | None
+) -> list[str]:
+    """Which floors, if any, the measured result failed to clear."""
+    measured = [
+        (f"hit@{TOP_K}", result["hit_rate"], min_hit),
+        ("MRR", result["mrr"], min_mrr),
+    ]
+    return [
+        f"{name} {value:.3f} is below the floor of {floor:.3f}"
+        for name, value, floor in measured
+        if floor is not None and value < floor
+    ]
 
-    if not sweep:
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--sweep", action="store_true", help="compare retrieval configurations"
+    )
+    parser.add_argument(
+        "--min-hit", type=float, help=f"fail if hit@{TOP_K} falls below this"
+    )
+    parser.add_argument("--min-mrr", type=float, help="fail if MRR falls below this")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    questions = load_questions()
+
+    if not args.sweep:
         from config import MMR_LAMBDA, RETRIEVAL_MODE, USE_MMR
 
         result = score(questions, TOP_K, RETRIEVAL_MODE, USE_MMR, MMR_LAMBDA)
@@ -114,6 +149,12 @@ def main() -> None:
         )
         report_detail(questions, result)
         print(f"\nhit@{TOP_K} {result['hit_rate']:.2f}   MRR {result['mrr']:.3f}")
+
+        failures = below_floor(result, args.min_hit, args.min_mrr)
+        if failures:
+            # The misses are printed above, so a failing run already says which
+            # questions stopped working rather than only that the average moved.
+            raise SystemExit("retrieval regressed: " + "; ".join(failures))
         return
 
     configs = [

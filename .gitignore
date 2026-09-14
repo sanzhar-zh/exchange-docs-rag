@@ -10,3 +10,8 @@ data/raw/
 
 # Generated index. Rebuilt from data/raw by ingest.py.
 data/chroma/
+
+# Tool caches. pytest and ruff each write a self-ignoring .gitignore of their
+# own; this is here so that stays true if either stops doing it.
+.pytest_cache/
+.ruff_cache/

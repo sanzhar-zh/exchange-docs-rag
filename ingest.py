@@ -16,10 +16,9 @@ incremental updates are not worth the bookkeeping.
 import hashlib
 import re
 import shutil
+from pathlib import Path
 
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -80,12 +79,17 @@ HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>]{0,300}>")
 BLANK_RUN_RE = re.compile(r"\n{3,}")
 
 
-def collect_files() -> list:
+def collect_files(root: Path = RAW_DIR) -> list[Path]:
+    """Every documentation page under root that belongs in the index.
+
+    Bybit ships .mdx, Binance ships .md. Matching only .md silently indexed 3% of
+    the Bybit corpus and reported no error, so both suffixes are explicit here.
+    """
     files = []
-    for path in sorted(RAW_DIR.rglob("*")):
+    for path in sorted(root.rglob("*")):
         if path.suffix not in (".md", ".mdx") or not path.is_file():
             continue
-        parts = set(path.relative_to(RAW_DIR).parts)
+        parts = set(path.relative_to(root).parts)
         if parts & SKIP_DIRS or ".git" in parts:
             continue
         if path.name in SKIP_NAMES or path.name.endswith(SKIP_SUFFIXES):
@@ -111,13 +115,13 @@ def clean(text: str) -> tuple[str, str]:
     return BLANK_RUN_RE.sub("\n\n", text).strip(), title
 
 
-def split_file(path) -> list[Document]:
+def split_file(path: Path, root: Path = RAW_DIR) -> list[Document]:
     raw = path.read_text(encoding="utf-8", errors="ignore")
     text, title = clean(raw)
     if len(text) < 80:
         return []
 
-    source = str(path.relative_to(RAW_DIR)).replace("\\", "/")
+    source = str(path.relative_to(root)).replace("\\", "/")
     exchange = source.split("/", 1)[0]
 
     # Pages whose topic lives only in the frontmatter get it back as an H1, so the
@@ -203,6 +207,11 @@ def main() -> None:
                 "any Python session holding it, then run this again"
             ) from locked
     CHROMA_DIR.mkdir(parents=True)
+
+    # Imported here rather than at module level: these pull in torch, and the
+    # parsing and splitting above are worth being able to exercise without it.
+    from langchain_chroma import Chroma
+    from langchain_huggingface import HuggingFaceEmbeddings
 
     print(f"embedding with {EMBEDDING_MODEL}")
     embeddings = HuggingFaceEmbeddings(

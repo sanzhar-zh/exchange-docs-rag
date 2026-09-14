@@ -50,6 +50,11 @@ EXCHANGE_NAME = re.compile(
 EXTRA_SPACE = re.compile(r"\s{2,}")
 
 
+def strip_exchange_name(query: str) -> str:
+    """The question with the exchange name, and its preposition, taken out."""
+    return EXTRA_SPACE.sub(" ", EXCHANGE_NAME.sub(" ", query)).strip()
+
+
 def detect_exchange(query: str) -> str | None:
     """The exchange named in the question, if exactly one is.
 
@@ -137,7 +142,7 @@ def retrieve(
     # then outrank the endpoint the question is actually about. Removing it after
     # filtering was worth 0.068 hit@5 on the eval set.
     if exchange:
-        query = EXTRA_SPACE.sub(" ", EXCHANGE_NAME.sub(" ", query)).strip()
+        query = strip_exchange_name(query)
 
     if mode == "dense":
         return dense(query, k, exchange, mmr, lambda_mult)
@@ -162,7 +167,9 @@ def main() -> None:
     if len(args) >= 2 and args[0] == "--mode":
         mode, args = args[1], args[2:]
     if not args:
-        raise SystemExit('usage: python search.py [--mode hybrid|dense|keyword] "question"')
+        raise SystemExit(
+            'usage: python search.py [--mode hybrid|dense|keyword] "question"'
+        )
 
     query = " ".join(args)
     exchange = detect_exchange(query)

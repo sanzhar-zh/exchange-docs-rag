@@ -1,0 +1,16 @@
+# Test and lint tooling, plus the runtime packages the tested modules import.
+#
+# Deliberately not "-r requirements.txt". The unit tests never touch the index,
+# the embedding model or a provider, so they do not need chromadb,
+# sentence-transformers or the provider SDKs - which together pull in torch and
+# close to a gigabyte. Installing only what is imported keeps a full run at
+# seconds. The eval workflow does build the index, and installs requirements.txt.
+langchain-core
+langchain-text-splitters
+rank-bm25
+fastapi
+python-dotenv
+
+pytest
+httpx
+ruff
